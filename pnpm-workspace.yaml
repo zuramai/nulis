@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+  vue-demi: true
+  "@parcel/watcher": true
+  mongodb-memory-server: false

@@ -1,0 +1,82 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: 'Roboto Serif', Georgia, serif;
+  --font-serif: 'Roboto Serif', Georgia, serif;
+
+  --color-ink: #000000;
+  --color-ink-muted: #494949;
+  --color-row: #f8f8f8;
+  --color-field: #fafafa;
+
+  /* Accent from the Figma "Edit view" button */
+  --color-iris-50: #f0f0fe;
+  --color-iris-100: #e1e1fc;
+  --color-iris-200: #c4c4f8;
+  --color-iris-300: #a3a3f4;
+  --color-iris-400: #7f7ff0;
+  --color-iris-500: #5d5ded;
+  --color-iris-600: #4545d4;
+  --color-iris-700: #3636a8;
+  --color-iris-800: #2a2a80;
+  --color-iris-900: #1f1f5c;
+  --color-iris-950: #121238;
+
+  /* Destructive red from the Figma "Remove Project" button */
+  --color-alarm-50: #fff1f1;
+  --color-alarm-100: #ffdfe0;
+  --color-alarm-200: #ffc5c6;
+  --color-alarm-300: #ff9c9e;
+  --color-alarm-400: #ff6366;
+  --color-alarm-500: #ff1d21;
+  --color-alarm-600: #ed1115;
+  --color-alarm-700: #c80b0e;
+  --color-alarm-800: #a50e11;
+  --color-alarm-900: #881315;
+  --color-alarm-950: #4b0304;
+}
+
+:root {
+  --ui-primary: var(--color-ink);
+  --ui-text: var(--color-ink);
+  --ui-bg: #ffffff;
+}
+
+/* Dark mode is out of scope for v1: the design is black on white. */
+html {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-white text-black antialiased;
+}
+
+/* Milkdown Crepe theme overrides: match the serif, monochrome look */
+.nulis-editor .milkdown {
+  --crepe-color-background: #ffffff;
+  --crepe-color-on-background: #000000;
+  --crepe-color-surface: #ffffff;
+  --crepe-color-surface-low: #f8f8f8;
+  --crepe-color-on-surface: #000000;
+  --crepe-color-on-surface-variant: #494949;
+  --crepe-color-outline: #5b5b5b;
+  --crepe-color-primary: #000000;
+  --crepe-color-secondary: #f0f0f0;
+  --crepe-color-on-secondary: #000000;
+  --crepe-color-inverse: #000000;
+  --crepe-color-on-inverse: #ffffff;
+  --crepe-color-inline-code: #c80b0e;
+  --crepe-color-error: #ff1d21;
+  --crepe-color-hover: #f3f3f3;
+  --crepe-color-selected: #e8e8e8;
+  --crepe-color-inline-area: #f3f3f3;
+  --crepe-font-title: 'Roboto Serif', Georgia, serif;
+  --crepe-font-default: 'Roboto Serif', Georgia, serif;
+  --crepe-font-code: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.nulis-editor .milkdown .ProseMirror {
+  padding: 1.25rem 3.5rem;
+  min-height: 22rem;
+}

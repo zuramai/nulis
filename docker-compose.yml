@@ -1,0 +1,34 @@
+services:
+  app:
+    build: .
+    image: nulis:latest
+    restart: unless-stopped
+    ports:
+      - "${NULIS_PORT:-3000}:3000"
+    environment:
+      NUXT_MONGODB_URI: mongodb://mongo:27017/nulis
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD:?Set NUXT_SESSION_PASSWORD in .env (32+ chars)}
+      NUXT_ENCRYPTION_KEY: ${NUXT_ENCRYPTION_KEY:?Set NUXT_ENCRYPTION_KEY in .env (32+ chars)}
+      NUXT_OAUTH_GITHUB_CLIENT_ID: ${NUXT_OAUTH_GITHUB_CLIENT_ID:-}
+      NUXT_OAUTH_GITHUB_CLIENT_SECRET: ${NUXT_OAUTH_GITHUB_CLIENT_SECRET:-}
+      NUXT_FAKE_GIT: ${NUXT_FAKE_GIT:-false}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    # MongoDB 8 currently refuses to start on Linux kernels >= 6.19 (SERVER-121912).
+    # 7.0 runs everywhere; set MONGO_VERSION=8 if your host kernel is older.
+    image: mongo:${MONGO_VERSION:-7.0}
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  mongo-data:
