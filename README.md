@@ -1,5 +1,7 @@
 # Nulis
 
+<img width="2178" height="1216" alt="image" src="https://github.com/user-attachments/assets/d5b6c546-52cb-4693-9c24-debfcb3d71c5" />
+
 A content editor for static site generator repositories on GitHub. Connect your repositories and Nulis
 detects the generator, finds where the content lives, and lets you write in a WYSIWYG markdown editor.
 Every save is a commit pushed to the repository.
