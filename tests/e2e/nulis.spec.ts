@@ -134,6 +134,8 @@ test('edit frontmatter and body, upload an image and save with a commit message'
   const tags = page.getByTestId('fm-row-tags').getByRole('textbox', { name: 'Value' })
   await tags.fill('Life')
   await tags.press('Enter')
+  // Typed but not confirmed with Enter: blurring (e.g. clicking Save) still adds it
+  await tags.fill('Notes')
 
   // Upload an image through the editor's image block
   await page.locator('.milkdown .ProseMirror').click()
@@ -153,7 +155,7 @@ test('edit frontmatter and body, upload an image and save with a commit message'
   expect(last.changes.map(c => c.path).sort()).toEqual(['content/2025/beach-day.png', 'content/2025/index.md'])
 
   const file = await (await page.request.get('/api/__fake/file?repo=zuramai/til&path=content/2025/index.md')).json()
-  expect(file.content).toMatch(/tags:\n\s+- Journal\n\s+- Life/)
+  expect(file.content).toMatch(/tags:\n\s+- Journal\n\s+- Life\n\s+- Notes/)
   expect(file.content).toContain('](./beach-day.png)')
   expect(file.content).not.toContain('![1.00]')
 })

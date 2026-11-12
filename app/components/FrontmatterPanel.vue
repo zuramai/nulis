@@ -110,6 +110,9 @@ const summary = computed(() => {
             v-if="row.kind === 'list'"
             v-model="(row.value as string[])"
             placeholder="Add and press Enter"
+            add-on-blur
+            add-on-paste
+            :delimiter="/[,\n]/"
             aria-label="Value"
             class="w-full"
             :ui="{ item: 'bg-black text-white rounded-full', itemDelete: 'text-white hover:text-white/80' }"
