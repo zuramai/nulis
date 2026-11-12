@@ -9,5 +9,9 @@ useHead({ title: 'Sign in · Nulis' })
       Sign in
     </h1>
     <AuthForm mode="login" />
+    <USeparator label="New to Nulis?" class="my-6" />
+    <UButton to="/register" size="lg" block color="neutral" variant="outline" data-testid="register-link">
+      Register
+    </UButton>
   </div>
 </template>

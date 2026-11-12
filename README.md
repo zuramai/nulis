@@ -21,7 +21,7 @@ Every save is a commit pushed to the repository.
   from existing content.
 - **Sync** picks up changes pushed outside Nulis. Saves are refused if the file changed upstream.
 
-Single-owner: the first visitor creates the account, then registration closes.
+Multi-user: anyone can register from the login page. Each user has their own GitHub connection and projects.
 
 ## Stack
 

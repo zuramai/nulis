@@ -1,18 +1,18 @@
 import type { AuthStatus } from '#shared/types'
 
 /**
- * First-run flow: create account → log in → connect GitHub → pick repositories.
- * Each step redirects to the next missing one.
+ * Onboarding flow: register or log in → connect GitHub → pick repositories.
+ * Each step redirects to the next missing one. Anonymous visitors land on /register until the
+ * first account exists, /login afterwards.
  */
 export default defineNuxtRouteMiddleware(async (to) => {
   const status = await useRequestFetch()<AuthStatus>('/api/auth/status')
   const path = to.path
 
-  if (!status.hasUser)
-    return path === '/setup' ? undefined : navigateTo('/setup')
+  const isAuthPage = path === '/login' || path === '/register'
   if (!status.loggedIn)
-    return path === '/login' ? undefined : navigateTo('/login')
-  if (path === '/setup' || path === '/login')
+    return isAuthPage ? undefined : navigateTo(status.hasUser ? '/login' : '/register')
+  if (isAuthPage)
     return navigateTo('/')
   if (!status.githubConnected)
     return path === '/connect' || path === '/settings' ? undefined : navigateTo('/connect')

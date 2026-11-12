@@ -27,7 +27,7 @@ async function commitWith(page: Page, message: string) {
 
 test('first run: create account, connect GitHub and pick repositories', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' })
-  await expect(page).toHaveURL(/\/setup$/)
+  await expect(page).toHaveURL(/\/register$/)
 
   await page.getByTestId('username').fill(USER.username)
   await page.getByTestId('password').fill(USER.password)
@@ -51,9 +51,17 @@ test('first run: create account, connect GitHub and pick repositories', async ({
   await expect(page.getByTestId('project-gallery')).toContainText('Astro')
 })
 
-test('registration is closed and the setup page redirects to login', async ({ page }) => {
-  await page.goto('/setup')
+test('login page links to registration for additional users', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' })
   await expect(page).toHaveURL(/\/login$/)
+  await page.getByTestId('register-link').click()
+  await expect(page).toHaveURL(/\/register$/)
+
+  await page.getByTestId('username').fill('second')
+  await page.getByTestId('password').fill('password123')
+  await page.getByRole('button', { name: 'Create account' }).click()
+  // A fresh user starts their own onboarding, without the first user's projects
+  await expect(page).toHaveURL(/\/connect$/)
 })
 
 test('project page: list, search, sync and edit the table view', async ({ page }) => {

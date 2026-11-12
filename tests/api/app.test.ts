@@ -51,6 +51,7 @@ function client() {
 
 const owner = client()
 const stranger = client()
+const other = client()
 
 describe('onboarding', () => {
   it('starts with no user', async () => {
@@ -63,11 +64,12 @@ describe('onboarding', () => {
     expect(status).toBe(400)
   })
 
-  it('registers the single owner and closes registration', async () => {
+  it('registers multiple users with unique usernames', async () => {
     expect((await owner('/api/auth/register', { method: 'POST', body: { username: 'saugi', password: 'password123' } })).status).toBe(200)
-    const second = await stranger('/api/auth/register', { method: 'POST', body: { username: 'other', password: 'password123' } })
-    expect(second.status).toBe(403)
+    expect((await other('/api/auth/register', { method: 'POST', body: { username: 'other', password: 'password123' } })).status).toBe(200)
+    expect((await stranger('/api/auth/register', { method: 'POST', body: { username: 'saugi', password: 'password456' } })).status).toBe(409)
     expect((await owner('/api/auth/status')).data).toMatchObject({ hasUser: true, loggedIn: true, githubConnected: false })
+    expect((await stranger('/api/auth/status')).data).toMatchObject({ hasUser: true, loggedIn: false })
   })
 
   it('rejects bad logins and protects the API', async () => {
@@ -132,8 +134,10 @@ describe('projects', () => {
     expect((await owner(`/api/projects/${til.id}/view`, { method: 'PUT', body: { columns: [{ label: '', key: 'x', type: 'bogus' }] } })).status).toBe(400)
   })
 
-  it('does not expose projects to other sessions', async () => {
+  it('does not expose projects to other sessions or users', async () => {
     expect((await stranger(`/api/projects/${til.id}`)).status).toBe(401)
+    expect((await other(`/api/projects/${til.id}`)).status).toBe(404)
+    expect((await other<ProjectSummary[]>('/api/projects')).data).toEqual([])
     expect((await owner('/api/projects/000000000000000000000000')).status).toBe(404)
   })
 })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-  mode: 'setup' | 'login'
+  mode: 'register' | 'login'
 }>()
 
 const state = reactive({ username: '', password: '' })
@@ -12,7 +12,7 @@ async function submit() {
   error.value = ''
   loading.value = true
   try {
-    await $fetch(props.mode === 'setup' ? '/api/auth/register' : '/api/auth/login', { method: 'POST', body: state })
+    await $fetch(props.mode === 'register' ? '/api/auth/register' : '/api/auth/login', { method: 'POST', body: state })
     await refreshSession()
     await navigateTo('/')
   }
@@ -31,11 +31,11 @@ async function submit() {
     <UFormField label="Username" name="username" size="lg">
       <UInput v-model="state.username" autocomplete="username" required class="w-full" data-testid="username" />
     </UFormField>
-    <UFormField label="Password" name="password" size="lg" :hint="mode === 'setup' ? 'At least 8 characters' : undefined">
+    <UFormField label="Password" name="password" size="lg" :hint="mode === 'register' ? 'At least 8 characters' : undefined">
       <UInput
         v-model="state.password"
         type="password"
-        :autocomplete="mode === 'setup' ? 'new-password' : 'current-password'"
+        :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
         required
         class="w-full"
         data-testid="password"
@@ -43,7 +43,7 @@ async function submit() {
     </UFormField>
     <UAlert v-if="error" color="error" variant="subtle" :title="error" />
     <UButton type="submit" size="lg" block :loading="loading">
-      {{ mode === 'setup' ? 'Create account' : 'Sign in' }}
+      {{ mode === 'register' ? 'Create account' : 'Sign in' }}
     </UButton>
   </form>
 </template>
