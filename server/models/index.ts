@@ -15,6 +15,8 @@ const githubConnectionSchema = new Schema({
   login: { type: String, required: true },
   avatarUrl: { type: String, default: '' },
   tokenEnc: { type: String, required: true },
+  /** Present when the OAuth app issues expiring tokens; used to renew `tokenEnc` */
+  refreshTokenEnc: { type: String, default: null },
 }, { timestamps: true })
 
 const collectionSchema = new Schema({

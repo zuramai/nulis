@@ -67,7 +67,7 @@ const syncing = ref(false)
 async function sync() {
   syncing.value = true
   try {
-    const result = await $fetch<{ added: number, updated: number, removed: number }>(`/api/projects/${id}/sync`, { method: 'POST' })
+    const result = await apiFetch<{ added: number, updated: number, removed: number }>(`/api/projects/${id}/sync`, { method: 'POST' })
     await Promise.all([refreshProject(), refreshEntries()])
     const changes = result.added + result.updated + result.removed
     toast.add({
@@ -97,7 +97,7 @@ const removing = ref(false)
 async function removeProject() {
   removing.value = true
   try {
-    await $fetch(`/api/projects/${id}`, { method: 'DELETE' })
+    await apiFetch(`/api/projects/${id}`, { method: 'DELETE' })
     toast.add({ title: `${project.value?.repo} removed from Nulis`, color: 'success', icon: 'i-lucide-check' })
     await navigateTo('/projects')
   }
@@ -118,7 +118,7 @@ async function deleteEntry(message: string) {
   deleting.value = true
   try {
     const url: string = `/api/projects/${id}/content/${toDelete.value.path}`
-    await $fetch(url, { method: 'DELETE', body: { message } })
+    await apiFetch(url, { method: 'DELETE', body: { message } })
     toast.add({ title: 'Deleted and pushed', description: toDelete.value.title, color: 'success', icon: 'i-lucide-check' })
     toDelete.value = null
     await Promise.all([refreshProject(), refreshEntries()])

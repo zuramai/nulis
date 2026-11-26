@@ -32,7 +32,7 @@ async function submit() {
   submitting.value = true
   try {
     const picked = (repos.value ?? []).filter(r => selected.value.has(r.fullName)).map(r => ({ owner: r.owner, repo: r.repo }))
-    const response = await $fetch<{ results: AddResult[] }>('/api/projects', { method: 'POST', body: { repos: picked } })
+    const response = await apiFetch<{ results: AddResult[] }>('/api/projects', { method: 'POST', body: { repos: picked } })
     results.value = response.results
     selected.value = new Set()
     await refresh()

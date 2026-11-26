@@ -71,7 +71,7 @@ const invalid = computed(() => rows.value.some(r => !r.label.trim() || !r.key.tr
 async function save() {
   saving.value = true
   try {
-    const { columns } = await $fetch<{ columns: ViewColumn[] }>(`/api/projects/${props.projectId}/view`, {
+    const { columns } = await apiFetch<{ columns: ViewColumn[] }>(`/api/projects/${props.projectId}/view`, {
       method: 'PUT',
       body: { columns: rows.value.map(r => ({ ...r, label: r.label.trim(), key: r.key.trim() })) },
     })

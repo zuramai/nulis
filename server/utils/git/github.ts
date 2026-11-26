@@ -1,18 +1,92 @@
 import { Octokit } from '@octokit/rest'
+import { GITHUB_REAUTH } from '#shared/constants'
 import type { RepoOption } from '#shared/types'
 import type { CommitResult, FileChange, GitProvider, RepoInfo, RepoRef, RepoTree } from './provider'
 
 const DATE_BATCH = 50
 
-function isStatus(error: unknown, status: number) {
-  return (error as { status?: number })?.status === status
+function isStatus(error: unknown, status: number): error is { status: number } {
+  return typeof error === 'object' && error !== null && 'status' in error && error.status === status
+}
+
+export interface GitHubAuth {
+  token: string
+  /**
+   * Called with the token GitHub rejected; resolves to a fresh token, or `null` when the
+   * user has to go through OAuth again.
+   */
+  renew?: (rejectedToken: string) => Promise<string | null>
+}
+
+/** The stored GitHub token is unusable and cannot be renewed; the client should re-authorize. */
+export function githubReauthError() {
+  return createError({
+    statusCode: 401,
+    statusMessage: 'GitHub connection expired',
+    data: { code: GITHUB_REAUTH },
+  })
+}
+
+export function isGithubReauth(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('data' in error))
+    return false
+  const { data } = error
+  return typeof data === 'object' && data !== null && 'code' in data && data.code === GITHUB_REAUTH
 }
 
 export class GitHubProvider implements GitProvider {
   private octokit: Octokit
+  private token: string
+  private renewing: Promise<string | null> | null = null
 
-  constructor(token: string) {
-    this.octokit = new Octokit({ auth: token, userAgent: 'nulis' })
+  constructor({ token, renew }: GitHubAuth) {
+    this.token = token
+    // No `auth` option on purpose: Octokit's built-in auth hook is bound to the construction-time
+    // token and would overwrite the renewed header on retry. The request hook injects the current one.
+    this.octokit = new Octokit({ userAgent: 'nulis' })
+    this.octokit.hook.wrap('request', async (request, options) => {
+      const send = () => {
+        options.headers = { ...options.headers, authorization: `token ${this.token}` }
+        return request(options)
+      }
+      const rejectedToken = this.token
+      try {
+        return await send()
+      }
+      catch (error) {
+        if (!isStatus(error, 401) || !renew)
+          throw error
+        // GitHub expires OAuth tokens after a few hours: renew once, then retry so callers
+        // never see the expiry.
+        const renewed = await this.renewToken(renew, rejectedToken)
+        if (!renewed)
+          throw githubReauthError()
+        try {
+          return await send()
+        }
+        catch (retryError) {
+          throw isStatus(retryError, 401) ? githubReauthError() : retryError
+        }
+      }
+    })
+  }
+
+  /** Requests already in flight share one renewal instead of burning a single-use refresh token each. */
+  private renewToken(renew: (rejectedToken: string) => Promise<string | null>, rejectedToken: string) {
+    if (this.token !== rejectedToken)
+      return Promise.resolve(this.token)
+    if (!this.renewing) {
+      this.renewing = renew(rejectedToken)
+        .then((token) => {
+          if (token)
+            this.token = token
+          return token
+        })
+        .finally(() => {
+          this.renewing = null
+        })
+    }
+    return this.renewing
   }
 
   async listRepos(): Promise<RepoOption[]> {
