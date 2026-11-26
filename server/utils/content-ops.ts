@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { ContentCollection } from '#shared/types'
 import { ContentEntry, PendingAsset, type ProjectDoc } from '../models'
 import type { FileChange, GitProvider, RepoRef } from './git/provider'
+import { isGithubReauth } from './git/github'
 import { collectionFor, entryFields } from './sync'
 
 export const commitMessage = z.string().trim().min(1, 'Commit message is required').max(500)
@@ -66,7 +67,10 @@ export async function commitOrFail(git: GitProvider, ref: RepoRef, message: stri
     return await git.commit(ref, message, changes)
   }
   catch (error) {
-    const status = (error as { status?: number }).status
+    // Not an auth problem the user can retry here: the client has to reconnect GitHub
+    if (isGithubReauth(error))
+      throw error
+    const status = typeof error === 'object' && error !== null && 'status' in error ? error.status : undefined
     if (status === 401 || status === 403)
       throw createError({ statusCode: 403, statusMessage: 'GitHub rejected the commit. Check that your token can push to this repository.' })
     if (status === 409 || status === 422)

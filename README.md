@@ -54,6 +54,10 @@ Multi-user: anyone can register from the login page. Each user has their own Git
 **Behind a reverse proxy:** set `NUXT_OAUTH_GITHUB_REDIRECT_URL=https://your.domain/auth/github` if the
 callback URL is detected wrongly.
 
+**Expiring tokens:** if the OAuth App is set to expire user tokens, Nulis keeps the refresh token, renews
+access tokens in the background, and retries the GitHub call. If renewal is impossible, the next request
+runs the GitHub authorization round trip and returns you to the same page.
+
 **MongoDB version:** compose uses `mongo:7.0` by default. MongoDB 8 currently refuses to start on Linux
 kernels ≥ 6.19 ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)). Set `MONGO_VERSION=8` if
 your host kernel is older.

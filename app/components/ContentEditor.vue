@@ -58,13 +58,13 @@ async function save(message: string) {
   try {
     let result: { sha: string, path?: string }
     if (props.mode === 'create') {
-      result = await $fetch<{ sha: string, path: string }>(`/api/projects/${props.projectId}/content`, {
+      result = await apiFetch<{ sha: string, path: string }>(`/api/projects/${props.projectId}/content`, {
         method: 'POST',
         body: { path: props.document.path, frontmatter: frontmatter.value, body: outgoingBody, message, assets: assetIds.value },
       })
     }
     else {
-      result = await $fetch<{ sha: string }>(`/api/projects/${props.projectId}/content/${props.document.path}`, {
+      result = await apiFetch<{ sha: string }>(`/api/projects/${props.projectId}/content/${props.document.path}`, {
         method: 'PUT',
         body: { frontmatter: frontmatter.value, body: outgoingBody, sha: sha.value, message, assets: assetIds.value },
       })

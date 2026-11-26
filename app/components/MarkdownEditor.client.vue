@@ -58,7 +58,7 @@ async function upload(file: File) {
   form.append('file', file)
   form.append('contentPath', props.contentPath)
   try {
-    const asset = await $fetch<{ id: string, src: string }>(`/api/projects/${props.projectId}/assets`, { method: 'POST', body: form })
+    const asset = await apiFetch<{ id: string, src: string }>(`/api/projects/${props.projectId}/assets`, { method: 'POST', body: form })
     emit('uploaded', asset.id)
     return asset.src
   }

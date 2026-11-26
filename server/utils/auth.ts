@@ -23,6 +23,73 @@ export async function requireUser(event: H3Event) {
   return { id: String(user._id), username: user.username }
 }
 
+interface GithubTokenResponse {
+  access_token?: string
+  refresh_token?: string
+  error?: string
+  error_description?: string
+}
+
+/** Everything needed to exchange a refresh token, decoupled from the runtime config object. */
+interface GithubTokenRefreshConfig {
+  encryptionKey: string
+  clientId: string
+  clientSecret: string
+}
+
+const renewals = new Map<string, Promise<string | null>>()
+
+/**
+ * Exchanges the stored refresh token for a new access token and saves it. GitHub rotates
+ * refresh tokens, so concurrent callers share one exchange per user.
+ */
+async function renewGithubToken(userId: string, rejectedToken: string, config: GithubTokenRefreshConfig): Promise<string | null> {
+  const pending = renewals.get(userId)
+  if (pending)
+    return pending
+  const renewal = exchangeRefreshToken(userId, rejectedToken, config).finally(() => renewals.delete(userId))
+  renewals.set(userId, renewal)
+  return renewal
+}
+
+async function exchangeRefreshToken(userId: string, rejectedToken: string, config: GithubTokenRefreshConfig): Promise<string | null> {
+  const connection = await GithubConnection.findOne({ userId }).lean()
+  if (!connection?.refreshTokenEnc)
+    return null
+  const storedToken = decrypt(connection.tokenEnc, config.encryptionKey)
+  // Another request refreshed the connection while this one was in flight
+  if (storedToken !== rejectedToken)
+    return storedToken
+  if (!config.clientId || !config.clientSecret)
+    return null
+  try {
+    const tokens = await $fetch<GithubTokenResponse>('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: { accept: 'application/json' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        refresh_token: decrypt(connection.refreshTokenEnc, config.encryptionKey),
+      }),
+    })
+    if (!tokens.access_token) {
+      console.warn(`[nulis] GitHub token refresh failed: ${tokens.error_description || tokens.error || 'no token returned'}`)
+      return null
+    }
+    const update: Record<string, string> = { tokenEnc: encrypt(tokens.access_token, config.encryptionKey) }
+    // Refresh tokens are single-use; keep the rotated one
+    if (tokens.refresh_token)
+      update.refreshTokenEnc = encrypt(tokens.refresh_token, config.encryptionKey)
+    await GithubConnection.updateOne({ userId }, { $set: update })
+    return tokens.access_token
+  }
+  catch (error) {
+    console.warn('[nulis] GitHub token refresh failed:', error instanceof Error ? error.message : error)
+    return null
+  }
+}
+
 export async function getGitProvider(event: H3Event, userId: string): Promise<GitProvider> {
   const config = useRuntimeConfig(event)
   const connection = await GithubConnection.findOne({ userId }).lean()
@@ -30,7 +97,12 @@ export async function getGitProvider(event: H3Event, userId: string): Promise<Gi
     throw createError({ statusCode: 412, statusMessage: 'Connect GitHub first' })
   if (config.fakeGit)
     return getFakeGit()
-  return new GitHubProvider(decrypt(connection.tokenEnc, config.encryptionKey))
+  const { encryptionKey, oauth } = config
+  const { clientId, clientSecret } = oauth.github
+  return new GitHubProvider({
+    token: decrypt(connection.tokenEnc, encryptionKey),
+    renew: rejectedToken => renewGithubToken(userId, rejectedToken, { encryptionKey, clientId, clientSecret }),
+  })
 }
 
 /** Loads a project owned by the current user, plus a git provider for it. */

@@ -33,7 +33,7 @@ async function prepare() {
   error.value = ''
   preparing.value = true
   try {
-    document.value = await $fetch<EditableDocument>(`/api/projects/${id}/content/prepare`, {
+    document.value = await apiFetch<EditableDocument>(`/api/projects/${id}/content/prepare`, {
       method: 'POST',
       body: { collection: form.collection, slug: slug.value, template: form.template === BLANK ? undefined : form.template },
     })
